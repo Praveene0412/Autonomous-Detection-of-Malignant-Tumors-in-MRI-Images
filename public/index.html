@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Brain Tumour Detection</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    #loginMessage, #regMessage, #forgotPasswordMessage { 
+      background: none; 
+      border: none; 
+      padding: 8px; 
+      margin-top: 8px; 
+      font-weight: bold; 
+      text-align:center;
+      min-height: 24px;
+      border-radius: 4px;
+    }
+    .success-msg { color: #388e3c; background: rgba(56, 142, 60, 0.1); }
+    .error-msg { color: #d32f2f; background: rgba(211, 47, 47, 0.1); }
+    
+    .admin-only { display:none; }
+    .upload-preview { margin-top: 12px; display:flex; gap:12px; align-items:center; flex-wrap: wrap; }
+    .preview-img { width:110px; height:110px; object-fit:cover; border-radius:6px; border:1px solid #ddd; }
+    .spinner {
+      width:36px; height:36px; border-radius:50%;
+      border:4px solid #1976d2; border-top-color: transparent;
+      animation: spin 1s linear infinite; display:inline-block; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-container { padding: 20px; background: #fff; border-radius:8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-height:100px; }
+    .result-title { font-size:20px; margin-bottom:12px; font-weight: bold; }
+    .result-positive { color: #d32f2f; }
+    .result-negative { color: #388e3c; }
+    
+    /* History table styles */
+    .history-container { margin-top: 20px; }
+    .history-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .history-table th { background: linear-gradient(135deg, #1e1a60, #6a11cb); color: white; padding: 12px; text-align: left; font-weight: bold; }
+    .history-table td { padding: 12px; border-bottom: 1px solid #eee; }
+    .history-table tr:hover { background: #f5f5f5; }
+    .tumor-yes { color: #d32f2f; font-weight: bold; }
+    .tumor-no { color: #388e3c; font-weight: bold; }
+    .no-data { text-align: center; padding: 40px; color: #999; font-style: italic; }
+    
+    /* Admin users table */
+    .admin-users-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 20px; }
+    .admin-users-table th { background: linear-gradient(135deg, #1e1a60, #6a11cb); color: white; padding: 12px; text-align: left; }
+    .admin-users-table td { padding: 12px; border-bottom: 1px solid #eee; }
+    .admin-users-table tr:hover { background: #f5f5f5; }
+    
+    .action-buttons { margin: 20px 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .action-btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+    .clear-btn { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; }
+    .clear-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4); }
+  </style>
+</head>
+
+<!-- add login-mode class so background shows on first load -->
+<body class="login-mode">
+  <div class="container">
+    <div class="header"><h1>Brainalyze</h1><h2>SMART BRAIN TUMOUR DETECTION</h2></div>
+
+    <!-- Login -->
+    <div id="loginPage" class="page active">
+      <h3>LOGIN</h3>
+      <form id="loginForm" autocomplete="off">
+        <div class="input-group"><input type="text" id="loginIdentifier" placeholder="Enter Email or Phone Number" autocomplete="off" required /></div>
+        <div class="input-group password-group">
+          <input type="password" id="loginPassword" placeholder="Enter Password" autocomplete="new-password" required />
+          <span class="password-toggle" data-target="loginPassword"><i class="fas fa-eye"></i></span>
+        </div>
+        <button type="submit" id="loginBtn">Sign-In</button>
+      </form>
+      <p id="loginMessage"></p>
+      <div class="auth-switch">
+        <p>New user? <a href="#" id="showRegisterLink">Register here</a></p>
+        <p><a href="#" id="forgotPasswordLink">Forgot Password?</a></p>
+      </div>
+    </div>
+
+    <!-- Register -->
+    <div id="registerPage" class="page">
+      <h3>Register</h3>
+      <form id="registerForm" autocomplete="off">
+        <div class="input-group"><input type="text" id="regIdentifier" placeholder="Enter Email or Phone Number" autocomplete="off" required /></div>
+        <div class="input-group password-group">
+          <input type="password" id="regPassword" placeholder="Enter Password" autocomplete="new-password" required />
+          <span class="password-toggle" data-target="regPassword"><i class="fas fa-eye"></i></span>
+        </div>
+        <div class="input-group password-group">
+          <input type="password" id="regConfirmPassword" placeholder="Confirm Password" autocomplete="new-password" required />
+          <span class="password-toggle" data-target="regConfirmPassword"><i class="fas fa-eye"></i></span>
+        </div>
+        <button type="submit" id="regBtn">Register</button>
+      </form>
+      <p id="regMessage"></p>
+      <div class="auth-switch"><p>Already have an account? <a href="#" id="showLoginLink">Login here</a></p></div>
+    </div>
+
+    <!-- Forgot Password -->
+    <div id="forgotPasswordPage" class="page">
+      <h3>Forgot Password</h3>
+      <form id="forgotPasswordForm" autocomplete="off">
+        <div class="input-group"><input type="text" id="forgotIdentifier" placeholder="Enter your Email or Phone Number" autocomplete="off" required /></div>
+        <button type="submit" id="forgotPasswordBtn">Send Reset Instructions</button>
+      </form>
+      <p id="forgotPasswordMessage"></p>
+      <div class="auth-switch"><p>Remember your password? <a href="#" id="showLoginFromForgotLink">Login here</a></p></div>
+    </div>
+
+    <!-- Home -->
+    <div id="homePage" class="page">
+      <div class="nav-centered">
+        <button class="nav-btn active nav-home">Home</button>
+        <button class="nav-btn nav-preview">Preview</button>
+        <button class="nav-btn admin-only nav-history">History</button>
+        <button class="nav-btn admin-only nav-admin">Admin</button>
+        <button class="nav-btn logout nav-logout">Logout</button>
+      </div>
+
+      <h3>Brain Tumour Detection Using Deep Learning</h3>
+      <div class="upload-section">
+        <p>Upload Image:</p>
+        <input type="file" id="imageUpload" accept="image/*" />
+        <div class="upload-preview">
+          <div>
+            <div style="font-size:12px;color:#666">Selected file:</div>
+            <div id="fileName">No file selected.</div>
+          </div>
+          <img id="previewImg" class="preview-img" src="" alt="Preview" style="display:none" />
+          <div id="processingIndicator" style="display:none;align-items:center;">
+            <div class="spinner"></div>
+            <div style="margin-left:8px">Processing...</div>
+          </div>
+        </div>
+        <button id="submitBtn" class="submit-btn">Submit</button>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div id="previewPage" class="page">
+      <div class="nav-centered">
+        <button class="nav-btn nav-home">Home</button>
+        <button class="nav-btn active nav-preview">Preview</button>
+        <button class="nav-btn admin-only nav-history">History</button>
+        <button class="nav-btn admin-only nav-admin">Admin</button>
+        <button class="nav-btn logout nav-logout">Logout</button>
+      </div>
+
+      <h3>Analysis Results</h3>
+      <div id="resultContainer" class="result-container">
+        <div id="resultContent">
+          <p>No analysis results yet. Upload an image from the Home page.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Page (Admin Only) -->
+    <div id="historyPage" class="page">
+      <div class="nav-centered">
+        <button class="nav-btn nav-home">Home</button>
+        <button class="nav-btn nav-preview">Preview</button>
+        <button class="nav-btn active nav-history">History</button>
+        <button class="nav-btn nav-admin">Admin</button>
+        <button class="nav-btn logout nav-logout">Logout</button>
+      </div>
+
+      <h3>Analysis History</h3>
+      <div class="action-buttons">
+        <button class="action-btn clear-btn" id="clearHistoryBtn">Clear All History</button>
+      </div>
+      
+      <div class="history-container">
+        <table class="history-table" id="historyTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Filename</th>
+              <th>Result</th>
+              <th>Confidence</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr><td colspan="5" class="no-data">Loading history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Admin Page -->
+    <div id="adminPage" class="page">
+      <div class="nav-centered">
+        <button class="nav-btn nav-home">Home</button>
+        <button class="nav-btn nav-preview">Preview</button>
+        <button class="nav-btn nav-history">History</button>
+        <button class="nav-btn active nav-admin">Admin</button>
+        <button class="nav-btn logout nav-logout">Logout</button>
+      </div>
+
+      <h3>User Management</h3>
+      <div class="admin-users-container">
+        <div class="admin-stats">
+          <div class="stat-card"><h4>Total Users</h4><span id="totalUsersCount">0</span></div>
+          <div class="stat-card"><h4>Admin Users</h4><span id="adminUsersCount">1</span></div>
+        </div>
+
+        <table class="admin-users-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Email/Phone</th>
+              <th>Registration Date</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody id="adminUsersTableBody">
+            <tr><td colspan="4" class="no-data">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer"><p>www.brain.org</p><p class="brand">BRAIN</p></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

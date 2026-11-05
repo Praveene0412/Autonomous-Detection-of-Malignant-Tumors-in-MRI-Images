@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node.js
+node_modules/
+
+# Dataset and uploaded files
+Datasets/
+split_data/
+uploads/*
+!uploads/.gitkeep
+
+# Flask session
+flask_session/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
